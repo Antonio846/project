@@ -133,7 +133,7 @@ namespace Base_Area_51
             while (true)
             {
                 randValue = Random.Shared.Next(10);
-                Thread.Sleep(200);
+                Thread.Sleep(400);
                 //Should I do something on this floor?
                 if (randValue < 9)
                 {
@@ -243,7 +243,7 @@ namespace Base_Area_51
             while (true)
             {
                 int randValue = Random.Shared.Next(100);
-                Thread.Sleep(200);
+                Thread.Sleep(400);
                 //Should I do something on this floor?
                 if (randValue < 40)
                 {
