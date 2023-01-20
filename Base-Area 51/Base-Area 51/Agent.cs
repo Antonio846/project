@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Formats.Asn1;
 using System.Linq;
 using System.Security;
@@ -20,8 +21,6 @@ namespace Base_Area_51
         int waitTimeGoing;
         int randValue;
         int floorGoingTo;
-        bool outerFlag = true;
-        bool innerFlag = true;
         string agentCredentials = "";
 
         public Agent(string securityLevel, Elevator elevator)
@@ -104,7 +103,6 @@ namespace Base_Area_51
             waitTimeComing = int.Parse(floorDiff + "000");
 
             Thread.Sleep(waitTimeComing);
-            Console.WriteLine(waitTimeComing);
         }
         public void DecideBehaviour()
         {
@@ -152,61 +150,55 @@ namespace Base_Area_51
 
         public void BehaviourSecret()
         {   
-            while (outerFlag)
+            while (true)
             {
-                innerFlag = true;
                 randValue = Random.Shared.Next(100);
-                Thread.Sleep(200);
+                Thread.Sleep(400);
                 //Should I do something on this floor?
                 if (randValue < 40)
                 {
                     //Staying on the same floor
                     DisplayInfo(infoTypes.Working);
                 }
-                else if (randValue < 70)
+                else if (randValue < 80)
                 {
                     //Going to elevator
-                    while (innerFlag)
+                    if (!elevator.IsElevatorAvailable())
                     {
-                        if (elevator.isElevatorAvailable(this))
+                        DisplayInfo(infoTypes.WaitingElevator);
+                    }
+
+                    elevator.elevatorStatus.Reset();
+                    elevator.UseElevator();
+
+                    if (elevator.currentFloor != currentFloorNum)
+                    {
+                        CallingElevator();
+                    }
+                    
+                    DisplayInfo(infoTypes.EnteringElevator);
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        if (currentFloorNum == i)
                         {
-                            //Check if the elevator needs calling or its on the same floor
-                            if (elevator.currentFloor != currentFloorNum)
-                            {
-                                CallingElevator();
-                            }
-                            
-                            DisplayInfo(infoTypes.EnteringElevator);
-
-                            for (int i = 0; i < 2; i++)
-                            {
-                                if (currentFloorNum == i)
-                                {
-                                    continue;
-                                }
-                                else
-                                {
-                                    floorGoingTo = i;
-                                    DisplayInfo(infoTypes.GoingFromAtoB);
-                                    Thread.Sleep(1000);
-                                    DisplayInfo(infoTypes.LeavingElevator);
-                                    elevator.currentFloor = i;
-
-                                    currentFloorNum = i;
-                                    currentFloorName = elevator.floorNames[i];
-
-                                    innerFlag = false;
-                                    break;
-                                }
-                            }
-                            elevator.LeavingElevator();
+                            continue;
                         }
                         else
                         {
-                            DisplayInfo(infoTypes.WaitingElevator);
-                            Thread.Sleep(500);
-                        }                    
+                            floorGoingTo = i;
+                            DisplayInfo(infoTypes.GoingFromAtoB);
+                            Thread.Sleep(1000);
+                            DisplayInfo(infoTypes.LeavingElevator);
+                            elevator.currentFloor = i;
+
+                            currentFloorNum = i;
+                            currentFloorName = elevator.floorNames[i];
+                            break;
+                        }
                     }
+                    elevator.LeavingElevator();
+                    elevator.elevatorStatus.Set();
                 }
                 else
                 {
@@ -217,34 +209,30 @@ namespace Base_Area_51
                     }
                     else
                     {
-                        while (true)
+                        if (!elevator.IsElevatorAvailable())
                         {
-                            if (elevator.isElevatorAvailable(this))
-                            {
-                                //Check if the elevator needs calling or its on the same floor
-                                if (elevator.currentFloor != currentFloorNum)
-                                {
-                                    CallingElevator();
-                                }
-
-                                DisplayInfo(infoTypes.EnteringElevator);
-                                DisplayInfo(infoTypes.GoingToFloorG);
-                                Thread.Sleep(1000);
-
-                                DisplayInfo(infoTypes.LeavingElevator);
-                                elevator.currentFloor = 0;
-                                elevator.LeavingElevator();
-
-                                DisplayInfo(infoTypes.LeavingBase);
-                                outerFlag = false;
-                                break;
-                            }
-                            else
-                            {
-                                DisplayInfo(infoTypes.WaitingElevator);
-                                Thread.Sleep(500);
-                            }                           
+                            DisplayInfo(infoTypes.WaitingElevator);
                         }
+
+                        elevator.elevatorStatus.Reset();
+                        elevator.UseElevator();
+
+                        if (elevator.currentFloor != currentFloorNum)
+                        {
+                            CallingElevator();
+                        }
+
+                        DisplayInfo(infoTypes.EnteringElevator);
+                        DisplayInfo(infoTypes.GoingToFloorG);
+                        Thread.Sleep(1000);
+
+                        DisplayInfo(infoTypes.LeavingElevator);
+                        elevator.currentFloor = 0;
+                        elevator.LeavingElevator();
+                        elevator.elevatorStatus.Set();
+
+                        DisplayInfo(infoTypes.LeavingBase);
+                        break;                                                   
                     }                 
                 }
             }
@@ -252,7 +240,7 @@ namespace Base_Area_51
 
         public void BehaviourTopSecret()
         {
-            while (outerFlag)
+            while (true)
             {
                 int randValue = Random.Shared.Next(100);
                 Thread.Sleep(200);
@@ -262,72 +250,67 @@ namespace Base_Area_51
                     //Staying on the same floor
                     DisplayInfo(infoTypes.Working);
                 }
-                else if (randValue < 70)
+                else if (randValue < 80)
                 {
                     //Going to elevator
-                    while (true)
+                    if (!elevator.IsElevatorAvailable())
                     {
-                        if (elevator.isElevatorAvailable(this))
+                        DisplayInfo(infoTypes.WaitingElevator);
+                    }
+
+                    elevator.elevatorStatus.Reset();
+                    elevator.UseElevator();
+
+                    if (elevator.currentFloor != currentFloorNum)
+                    {
+                        CallingElevator();
+                    }
+
+                    DisplayInfo(infoTypes.EnteringElevator);
+
+                    List<int> floorOptions = new List<int>();
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (currentFloorNum == i)
                         {
-                            //Check if the elevator needs calling or its on the same floor
-                            if (elevator.currentFloor != currentFloorNum)
-                            {
-                                CallingElevator();
-                            }
-
-                            DisplayInfo(infoTypes.EnteringElevator);
-
-                            List<int> floorOptions = new List<int>();
-
-                            for (int i = 0; i < 4; i++)
-                            {
-                                if (currentFloorNum == i)
-                                {
-                                    continue;
-                                }
-                                else
-                                {
-                                    floorOptions.Add(i);
-                                }
-
-                            }
-
-                            //Randomly choosing a floor
-                            randValue = Random.Shared.Next(3);
-                            if (randValue == 0)
-                            {
-                                floorGoingTo = floorOptions[0];
-                            }
-                            else if (randValue == 1)
-                            {
-                                floorGoingTo = floorOptions[1];
-                            }
-                            else
-                            {
-                                floorGoingTo = floorOptions[2];
-                            }
-
-                            DisplayInfo(infoTypes.GoingFromAtoB);
-
-                            floorDiff = Math.Abs(currentFloorNum - floorGoingTo);
-                            waitTimeGoing = int.Parse(floorDiff + "000");
-                            Thread.Sleep(waitTimeGoing);
-                            DisplayInfo(infoTypes.LeavingElevator);
-                            elevator.currentFloor = floorGoingTo;
-
-                            currentFloorNum = floorGoingTo;
-                            currentFloorName = elevator.floorNames[floorGoingTo];
-
-                            elevator.LeavingElevator();
-                            break;                       
+                            continue;
                         }
                         else
                         {
-                            DisplayInfo(infoTypes.WaitingElevator);
-                            Thread.Sleep(500);
+                            floorOptions.Add(i);
                         }
 
                     }
+
+                    //Randomly choosing a floor
+                    randValue = Random.Shared.Next(3);
+                    if (randValue == 0)
+                    {
+                        floorGoingTo = floorOptions[0];
+                    }
+                    else if (randValue == 1)
+                    {
+                        floorGoingTo = floorOptions[1];
+                    }
+                    else
+                    {
+                        floorGoingTo = floorOptions[2];
+                    }
+
+                    DisplayInfo(infoTypes.GoingFromAtoB);
+
+                    floorDiff = Math.Abs(currentFloorNum - floorGoingTo);
+                    waitTimeGoing = int.Parse(floorDiff + "000");
+                    Thread.Sleep(waitTimeGoing);
+                    DisplayInfo(infoTypes.LeavingElevator);
+                    elevator.currentFloor = floorGoingTo;
+
+                    currentFloorNum = floorGoingTo;
+                    currentFloorName = elevator.floorNames[floorGoingTo];
+
+                    elevator.LeavingElevator();
+                    elevator.elevatorStatus.Set();
                 }
                 else
                 {
@@ -338,37 +321,32 @@ namespace Base_Area_51
                     }
                     else
                     {
-                        while (true)
+                        if (!elevator.IsElevatorAvailable())
                         {
-                            if (elevator.isElevatorAvailable(this))
-                            {
-                                //Check if the elevator needs calling or its on the same floor
-                                if (elevator.currentFloor != currentFloorNum)
-                                {
-                                    CallingElevator();
-                                }
-
-                                DisplayInfo(infoTypes.EnteringElevator);
-                                DisplayInfo(infoTypes.GoingToFloorG);
-
-                                waitTimeGoing = int.Parse(currentFloorNum + "000");
-                                Thread.Sleep(waitTimeGoing);
-                                DisplayInfo(infoTypes.LeavingElevator);
-                                elevator.currentFloor = 0;
-
-                                DisplayInfo(infoTypes.LeavingBase);
-
-                                elevator.LeavingElevator();
-                                outerFlag= false;
-                                break;
-                            }
-                            else
-                            {
-                                DisplayInfo(infoTypes.WaitingElevator);
-                                Thread.Sleep(500);
-                            }
-                            
+                            DisplayInfo(infoTypes.WaitingElevator);
                         }
+
+                        elevator.elevatorStatus.Reset();
+                        elevator.UseElevator();
+
+                        if (elevator.currentFloor != currentFloorNum)
+                        {
+                            CallingElevator();
+                        }
+
+                        DisplayInfo(infoTypes.EnteringElevator);
+                        DisplayInfo(infoTypes.GoingToFloorG);
+
+                        waitTimeGoing = int.Parse(currentFloorNum + "000");
+                        Thread.Sleep(waitTimeGoing);
+                        DisplayInfo(infoTypes.LeavingElevator);
+                        elevator.currentFloor = 0;
+
+                        DisplayInfo(infoTypes.LeavingBase);
+
+                        elevator.LeavingElevator();
+                        elevator.elevatorStatus.Set();
+                        break;                                                
                     }
                 }
             }

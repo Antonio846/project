@@ -11,24 +11,31 @@ namespace Base_Area_51
         public string[] floorNames = new [] {"G", "S", "T1", "T2" };
 
         public int currentFloor;
+        public ManualResetEvent elevatorStatus;
         Semaphore semaphore;
+
 
         public Elevator()
         { 
             semaphore = new Semaphore(1, 1);
+            elevatorStatus = new ManualResetEvent(true);
         }
         
-        public bool isElevatorAvailable(Agent agent)
+        public bool IsElevatorAvailable()
         {
-            if (semaphore.WaitOne())
-            {               
-                return true;             
+            if (elevatorStatus.WaitOne(0))
+            {
+                return true;
             }
             else
             {
                 return false;
             }
-                
+        }
+
+        public void UseElevator()
+        {
+            semaphore.WaitOne();
         }
         
         public void LeavingElevator()
